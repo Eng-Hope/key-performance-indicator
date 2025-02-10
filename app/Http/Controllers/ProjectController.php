@@ -2,26 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
+use App\Models\Project;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class DepartmentController extends Controller
+class ProjectController extends Controller
 {
-
     /**
-     * add new department
+     * add new project
      * @param \Illuminate\Http\Request $req
      * @return mixed|\Illuminate\Http\JsonResponse
      */
-    public function new_department(Request $req)
+    public function new_project(Request $req)
     {
         try {
-            //validate the requesr
+            //validate the request
             $validate = Validator::make($req->all(), [
                 'name' => ['required'],
+                'start_date'=>['date', 'required']
             ]);
 
             if ($validate->fails()) {
@@ -30,13 +30,17 @@ class DepartmentController extends Controller
 
             $user = $req->user();
 
-            //add new department
-            $department = Department::create([
+            //add new project
+            $project =   Project::create([
                 'name' => $req->name,
                 'created_by' => $user->id,
+                'start_date'=> $req->start_date,
+                'description'=> $req->description,
+                'end_date' => $req->end_date,
             ]);
-            return response()->json($department);
+            return response()->json($project);
         } catch (Exception $ex) {
+            echo $ex;
             return response()->json([
                 'error' => 'an error has occured',
                 'description' => 'an error has occured please try again'
@@ -46,18 +50,18 @@ class DepartmentController extends Controller
 
 
     /**
-     * add users to departments
+     * add users to project
      * @param \Illuminate\Http\Request $req
      * @return mixed|\Illuminate\Http\JsonResponse
      */
-    public function add_user_to_department(Request $req)
+    public function add_user_to_project(Request $req)
     {
         try {
 
-            //validate requesr
+            //validate request
             $validate = Validator::make($req->all(), [
                 'user_id' => ['required'],
-                'department_id' => ['required'],
+                'project_id' => ['required'],
             ]);
 
             if ($validate->fails()) {
@@ -66,13 +70,14 @@ class DepartmentController extends Controller
 
             //data is valid
 
-            //get department and user
-            $department = Department::findOrFail($req->department_id);
+            //get project and user
+            $project = Project::findOrFail($req->project_id);
             $user = User::findOrFail($req->user_id);
 
-            $user->department_id = $department->id; //allocate user to the department
-            $user->save(); //save user
-            return response()->json($user);
+            //attach user to project
+            $user->projects()->attach($project->id);
+            //return response
+            return response()->json(["user"=> $user, "project"=> $project]);
         } catch (Exception $ex) {
             return response()->json([
                 'error' => 'an error has occured',
@@ -82,22 +87,22 @@ class DepartmentController extends Controller
     }
 
     /**
-     * find all departments
+     * find all projects
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
-    public function get_all_departments(Request $request)
+    public function get_all_projects(Request $request)
     {
         try {
             $pageSize = $request->input('size', 10); // Default page size is 10
             $query = $request->input('query', ''); // Search query
             $page = $request->input('page', 1); //page 
 
-            $department = Department::with('users')
+            $project = Project::with('users')
                 ->where('name', 'ilike',  "%$query%") //search insensitive
                 ->orderBy('name', 'asc')
                 ->paginate($pageSize, ["*"], "page", $page);
-            return response()->json($department); //return response
+            return response()->json($project); //return response
         } catch (Exception $ex) {
             echo $ex;
             return response()->json([

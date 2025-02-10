@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -50,6 +51,14 @@ class User extends Authenticatable implements JWTSubject
 
     public function department(): BelongsTo{
         return $this->belongsTo(Department::class);
+    }
+
+    public function projects(): BelongsToMany{
+        return $this->belongsToMany(
+            Project::class,
+         'user_projects',
+          'user_id',
+           'project_id');
     }
 
 

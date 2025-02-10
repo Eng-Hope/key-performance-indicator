@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +21,12 @@ Route::middleware(["auth:api"])->group(function () {
     Route::post("/department", [DepartmentController::class, "new_department"]);
     Route::get("/department", [DepartmentController::class, "get_all_departments"]);
     Route::post("/department/add-users", [DepartmentController::class,"add_user_to_department"]);
+
+
+    Route::post("/project", [ProjectController::class, "new_project"]);
+    Route::get("/project", [ProjectController::class, "get_all_projects"]);
+    Route::post("/project/add-users", [ProjectController::class,"add_user_to_project"]);
+
 
 });
 
