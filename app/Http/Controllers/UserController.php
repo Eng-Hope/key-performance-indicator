@@ -20,7 +20,7 @@ class UserController extends Controller
     $page = $request->input('page', 1);//page 
 
     return response()
-    ->json(User::where('name', 'like',  "%$query%")
+    ->json(User::where('name', 'ilike',  "%$query%")
     ->orderBy('name', 'asc')
     ->paginate($pageSize, ["*"],"page", $page));
   }
