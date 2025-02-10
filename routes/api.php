@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\KpiController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -26,7 +27,14 @@ Route::middleware(["auth:api"])->group(function () {
     Route::post("/project", [ProjectController::class, "new_project"]);
     Route::get("/project", [ProjectController::class, "get_all_projects"]);
     Route::post("/project/add-users", [ProjectController::class,"add_user_to_project"]);
+    
 
+
+    Route::post("/kpi", [KpiController::class, "new_kpi"]);
+    Route::get("/kpi", [KpiController::class, "get_all_kpis"]);
+    Route::put("/kpi", [KpiController::class, "edit_user_kpi"]);
+    Route::post("/kpi/add-users", [KpiController::class,"add_user_to_kpi"]);
+    Route::get("/kpi/performance", [KpiController::class,"get_user_performance"]);
 
 });
 

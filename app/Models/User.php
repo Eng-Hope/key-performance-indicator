@@ -61,6 +61,15 @@ class User extends Authenticatable implements JWTSubject
            'project_id');
     }
 
+    public function kpis(): BelongsToMany{
+        return $this->belongsToMany(Kpi::class, 
+        'user_kpi',
+         'user_id', 
+         'kpi_id')
+        ->withPivot('review', 'actual')
+        ->withTimestamps();
+    }
+
 
     public function getJWTIdentifier()
     {
