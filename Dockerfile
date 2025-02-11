@@ -1,9 +1,7 @@
-
-
 # stage 1: build stage
 FROM php:8.3-fpm-alpine as build
 
-# installing system dependencies and php extensions
+# install system dependencies and php extensions
 RUN apk add --no-cache \
     zip \
     libzip-dev \
@@ -15,6 +13,7 @@ RUN apk add --no-cache \
     libpng-dev \
     nodejs \
     npm \
+    sqlite-dev \  # Install SQLite3 dependencies
     && docker-php-ext-configure zip \
     && docker-php-ext-install zip pdo pdo_mysql \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
@@ -43,7 +42,7 @@ RUN chown -R www-data:www-data /var/www/html/vendor \
 # stage 2: production stage
 FROM php:8.3-fpm-alpine
 
-# install nginx
+# install nginx and required libraries
 RUN apk add --no-cache \
     zip \
     libzip-dev \
@@ -57,6 +56,7 @@ RUN apk add --no-cache \
     gettext-dev \
     freetype-dev \
     nginx \
+    sqlite-dev \  # Install SQLite3 dependencies for production
     && docker-php-ext-configure zip \
     && docker-php-ext-install zip pdo pdo_mysql \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
@@ -83,3 +83,4 @@ WORKDIR /var/www/html
 VOLUME ["/var/www/html/storage/app"]
 
 CMD ["sh", "-c", "nginx && php-fpm"]
+
