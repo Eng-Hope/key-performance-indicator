@@ -12,7 +12,7 @@ services:
       APP_KEY: base64:lHfsKWtMbodW1cqjHk3g6OcrsEm+tPxMxtGmZtMBuAI=
       APP_DEBUG: true
       APP_TIMEZONE: UTC
-      APP_URL: http://localhost
+      APP_URL: https://key-performance-indicator-7g9c.onrender.com
       APP_LOCALE: en
       APP_FALLBACK_LOCALE: en
       APP_FAKER_LOCALE: en_US
@@ -58,8 +58,8 @@ services:
       AWS_BUCKET:
       AWS_USE_PATH_STYLE_ENDPOINT: false
       VITE_APP_NAME: "${APP_NAME}"
-      AUTH_GUARD: apiqQOnwUDcxze75Da2uaK3umDGPBSIgTZKxzwetZYtWwahwJZWQISwen4TuUCq2Ska 
-      JWT_SECRET: qQOnwUDcxze75Da2uaK3umDGPBSIgTZKxzwetZYtWwahwJZWQISwen4TuUCq2Ska # Or generate a new one
+      AUTH_GUARD: api 
+      JWT_SECRET: qQOnwUDcxze75Da2uaK3umDGPBSIgTZKxzwetZYtWwahwJZWQISwen4TuUCq2Ska
       JWT_ALGO: HS256
       JWT_REFRESH_TTL: null
       
