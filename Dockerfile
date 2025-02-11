@@ -1,40 +1,85 @@
-# Step 1: Set up the base image for PHP
-FROM php:8.2-fpm-alpine
 
-# Step 2: Install dependencies for Laravel
+
+# stage 1: build stage
+FROM php:8.3-fpm-alpine as build
+
+# installing system dependencies and php extensions
 RUN apk add --no-cache \
-    bash \
-    git \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    libfreetype6-dev \
-    libzip-dev \
     zip \
-    nginx \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql zip
+    libzip-dev \
+    freetype \
+    libjpeg-turbo \
+    libpng \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    nodejs \
+    npm \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install zip pdo pdo_mysql \
+    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-enable gd
 
-# Step 3: Set working directory
-WORKDIR /var/www
+# install composer
+COPY --from=composer:2.7.6 /usr/bin/composer /usr/bin/composer
 
-# Step 4: Install Composer (for PHP dependency management)
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+WORKDIR /var/www/html
 
-# Step 5: Copy the Laravel application files
+# copy necessary files and change permissions
 COPY . .
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage \
+    && chmod -R 775 /var/www/html/bootstrap/cache
 
-# Step 6: Install Laravel dependencies
-RUN composer install --optimize-autoloader --no-dev
+# install php and node.js dependencies
+RUN composer install --no-dev --prefer-dist \
+    && npm install \
+    && npm run build
 
-# Step 7: Set the correct file permissions
-RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /var/www/html/vendor \
+    && chmod -R 775 /var/www/html/vendor
 
-# Step 8: Copy the Nginx configuration
-COPY nginx/laravel.conf /etc/nginx/sites-available/laravel
-RUN ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
+# stage 2: production stage
+FROM php:8.3-fpm-alpine
 
-# Step 9: Expose the port for Nginx
-EXPOSE 80
+# install nginx
+RUN apk add --no-cache \
+    zip \
+    libzip-dev \
+    freetype \
+    libjpeg-turbo \
+    libpng \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    oniguruma-dev \
+    gettext-dev \
+    freetype-dev \
+    nginx \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install zip pdo pdo_mysql \
+    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-enable gd \
+    && docker-php-ext-install bcmath \
+    && docker-php-ext-enable bcmath \
+    && docker-php-ext-install exif \
+    && docker-php-ext-enable exif \
+    && docker-php-ext-install gettext \
+    && docker-php-ext-enable gettext \
+    && docker-php-ext-install opcache \
+    && docker-php-ext-enable opcache \
+    && rm -rf /var/cache/apk/*
 
-# Step 10: Run Nginx and PHP-FPM
-CMD ["sh", "-c", "php-fpm & nginx -g 'daemon off;'"]
+# copy files from the build stage
+COPY --from=build /var/www/html /var/www/html
+COPY ./deploy/nginx.conf /etc/nginx/http.d/default.conf
+COPY ./deploy/php.ini "$PHP_INI_DIR/conf.d/app.ini"
+
+WORKDIR /var/www/html
+
+# add all folders where files are being stored that require persistence. if needed, otherwise remove this line.
+VOLUME ["/var/www/html/storage/app"]
+
+CMD ["sh", "-c", "nginx && php-fpm"]
