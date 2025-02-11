@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -97,6 +98,8 @@ class AuthController extends Controller
 
             // valid user
             $user = Auth::user();
+            $isAdmin = Role::where('user_id', $user->id)->
+            where('role', 'admin')->exists();
             //get expiration time of the token
             $expiration = JWTAuth::setToken($token)->getPayload()->get('exp');
 
@@ -107,6 +110,7 @@ class AuthController extends Controller
                 'user' => [
                     'name' => $user->name,
                     'email' => $user->email,
+                    'role'=> $isAdmin? 'admin': 'user',
                 ]
             ]);
         } catch (Exception $ex) {

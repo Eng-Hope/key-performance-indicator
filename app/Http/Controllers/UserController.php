@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Department;
+use App\Models\Kpi;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,4 +27,20 @@ class UserController extends Controller
     ->orderBy('name', 'asc')
     ->paginate($pageSize, ["*"],"page", $page));
   }
+
+
+  public function dashboard(): JsonResponse{
+    $user_count = User::all()->count();
+    $project_count = Project::all()->count();
+    $department_count = Department::all()->count();
+    $kpi_count = Kpi::all()->count();
+
+    return response()->json([
+      "user_count"=> $user_count,
+      'project_count'=> $project_count,
+      'department_counr'=> $department_count,
+      'kpi_count' => $kpi_count
+    ]);
+  }
+
 }
