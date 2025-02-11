@@ -149,6 +149,7 @@ class AuthController extends Controller
                 'exp' => $expiration,
             ]);
         } catch (Exception $ex) {
+            echo $ex;
             return response()->json(['error' => $ex->getMessage()], 400);
         }
     }
