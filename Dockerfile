@@ -1,86 +1,26 @@
-# stage 1: build stage
-FROM php:8.3-fpm-alpine as build
+FROM alpine:latest
 
-# install system dependencies and php extensions
-RUN apk add --no-cache \
-    zip \
-    libzip-dev \
-    freetype \
-    libjpeg-turbo \
-    libpng \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    nodejs \
-    npm \
-    sqlite-dev \  # Install SQLite3 dependencies
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_mysql \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-enable gd
+# Install necessary packages, including curl, PHP 8.3 and its extensions, Composer, and Laravel installer
+RUN apk add --no-cache curl php83 php83-cli php83-fpm php83-phar php83-bcmath php83-curl php83-fileinfo php83-intl php83-mbstring php83-openssl php83-mysqlnd php83-tokenizer php83-session php83-sodium php83-dom php83-pgsql php83-pdo php83-pdo_pgsql nodejs npm \
+    && curl -fsSL https://getcomposer.org/installer | php83 -- --install-dir=/usr/local/bin --filename=composer \
+    && composer global require laravel/installer
 
-# install composer
-COPY --from=composer:2.7.6 /usr/bin/composer /usr/bin/composer
+# Create app directory
+WORKDIR /app
 
-WORKDIR /var/www/html
+# Copy application files (excluding node_modules)
+COPY . /app
 
-# copy necessary files and change permissions
-COPY . .
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
+# Install PHP dependencies
+RUN composer install --no-interaction --no-dev --optimize-autoloader
 
-# install php and node.js dependencies
-RUN composer install --no-dev --prefer-dist \
-    && npm install \
-    && npm run build
 
-RUN chown -R www-data:www-data /var/www/html/vendor \
-    && chmod -R 775 /var/www/html/vendor
 
-# stage 2: production stage
-FROM php:8.3-fpm-alpine
+# Install Node dependencies and build assets
+RUN npm install && npm run build
 
-# install nginx and required libraries
-RUN apk add --no-cache \
-    zip \
-    libzip-dev \
-    freetype \
-    libjpeg-turbo \
-    libpng \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    oniguruma-dev \
-    gettext-dev \
-    freetype-dev \
-    nginx \
-    sqlite-dev \  # Install SQLite3 dependencies for production
-    && docker-php-ext-configure zip \
-    && docker-php-ext-install zip pdo pdo_mysql \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-enable gd \
-    && docker-php-ext-install bcmath \
-    && docker-php-ext-enable bcmath \
-    && docker-php-ext-install exif \
-    && docker-php-ext-enable exif \
-    && docker-php-ext-install gettext \
-    && docker-php-ext-enable gettext \
-    && docker-php-ext-install opcache \
-    && docker-php-ext-enable opcache \
-    && rm -rf /var/cache/apk/*
+# Expose port
+EXPOSE 8000
 
-# copy files from the build stage
-COPY --from=build /var/www/html /var/www/html
-COPY ./deploy/nginx.conf /etc/nginx/http.d/default.conf
-COPY ./deploy/php.ini "$PHP_INI_DIR/conf.d/app.ini"
-
-WORKDIR /var/www/html
-
-# add all folders where files are being stored that require persistence. if needed, otherwise remove this line.
-VOLUME ["/var/www/html/storage/app"]
-
-CMD ["sh", "-c", "nginx && php-fpm"]
-
+# Start the application.  You'll likely need a web server (like Nginx) in front of php-fpm
+CMD ["php83", "artisan", "serve", "--host", "0.0.0.0", "--port", "8000"]
